@@ -26,11 +26,13 @@ from llm_rpg.systems.battle.enemy_scaling import (
     LevelingAttributeProbs,
 )
 from llm_rpg.systems.hero.hero import HeroClass
-from llm_rpg.llm.llm import LLM, OllamaLLM, GroqLLM
+from llm_rpg.llm.llm import LLM, OllamaLLM, GroqLLM, ZaiLLM
 from llm_rpg.llm.llm_cost_tracker import LLMCostTracker
 from llm_rpg.sprite_generator.sprite_generator import (
     DummySpriteGenerator,
     SDSpriteGenerator,
+    GeminiSpriteGenerator,
+    AsciiSpriteGenerator,
     SpriteGenerator,
 )
 from llm_rpg.ui.backgrounds import BattleBackgroundConfig
@@ -55,6 +57,11 @@ class GameConfig:
                 llm_cost_tracker=LLMCostTracker(),
                 model=llm_config["model"],
             )
+        if llm_config["type"] == "zai":
+            return ZaiLLM(
+                llm_cost_tracker=LLMCostTracker(),
+                model=llm_config["model"],
+            )
         raise ValueError(f"Unsupported LLM type: {llm_config['type']}")
 
     def _is_llm_block(self, block: dict) -> bool:
@@ -65,6 +72,7 @@ class GameConfig:
             in [
                 "ollama",
                 "groq",
+                "zai",
             ]
         )
 
@@ -358,6 +366,14 @@ class GameConfig:
         if section is None or not isinstance(section, dict):
             raise ValueError("sprite_generator not set in config")
         generator_type = section.get("type", "dummy")
+        if generator_type == "ascii":
+            llm_block = section.get("prompt_llm")
+            if not isinstance(llm_block, dict) or not self._is_llm_block(llm_block):
+                raise ValueError(
+                    "sprite_generator.prompt_llm must include type/model for ascii type"
+                )
+            prompt_llm = self._build_llm(llm_block)
+            return AsciiSpriteGenerator(prompt_llm=prompt_llm, debug=self.debug_mode)
         if generator_type == "dummy":
             latency_seconds = float(section.get("latency_seconds", 1.0))
             return DummySpriteGenerator(latency_seconds=latency_seconds)
@@ -403,6 +419,26 @@ class GameConfig:
             if "negative_prompt" in section:
                 kwargs["negative_prompt"] = section.get("negative_prompt")
             return SDSpriteGenerator(**kwargs)
+        if generator_type == "gemini":
+            llm_block = section.get("prompt_llm")
+            if not isinstance(llm_block, dict) or not self._is_llm_block(llm_block):
+                raise ValueError("sprite_generator.prompt_llm must include type/model")
+            prompt_llm = self._build_llm(llm_block)
+            prompt_template = section.get("prompt_template")
+            if prompt_template is None:
+                raise ValueError("sprite_generator.prompt_template is required")
+            return GeminiSpriteGenerator(
+                prompt_llm=prompt_llm,
+                prompt_template=prompt_template,
+                cache_dir=str(
+                    self.game_root / section.get("cache_dir", "cache/sprites")
+                ),
+                state_dir=str(
+                    self.game_root / section.get("state_dir", ".playwright_state")
+                ),
+                headless=section.get("headless", True),
+                debug=self.debug_mode,
+            )
         raise ValueError(f"Unsupported sprite_generator type: {generator_type}")
 
     @cached_property

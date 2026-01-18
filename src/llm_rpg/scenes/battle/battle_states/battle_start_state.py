@@ -12,9 +12,12 @@ from llm_rpg.ui.battle_ui import advance_dots
 from llm_rpg.ui.backgrounds import build_battle_background
 from llm_rpg.systems.battle.enemy_scaling import scale_enemy
 from llm_rpg.systems.battle.enemy import Enemy
+from llm_rpg.utils.logger import get_logger
 
 if TYPE_CHECKING:
     from llm_rpg.scenes.battle.battle_scene import BattleScene
+
+logger = get_logger(__name__)
 
 
 class BattleStartState(State):
@@ -147,6 +150,7 @@ class BattleStartState(State):
 
     def _generate_enemy(self):
         try:
+            logger.info("Starting enemy generation thread...")
             enemy, sprite = self.battle_scene.game.enemy_generator.generate_enemy()
             scale_enemy(
                 enemy=enemy,
@@ -154,6 +158,8 @@ class BattleStartState(State):
                 game_config=self.battle_scene.game.config,
                 debug=self.battle_scene.game.config.debug_mode,
             )
+            logger.info(f"Enemy generation successful: {enemy.name}")
             self.enemy_generation_result_queue.put((enemy, sprite))
         except Exception as exc:
+            logger.error(f"Enemy generation failed: {exc}", exc_info=True)
             self.enemy_generation_result_queue.put(exc)

@@ -122,7 +122,7 @@ class LLMActionJudge(ActionJudge):
                 print("////////////DEBUG ActionJudge prompt////////////")
             try:
                 unscaled_output = self.llm.generate_structured_completion(
-                    prompt=prompt, output_model=LLMActionJudgmentOutput
+                    prompt=prompt, output_schema=LLMActionJudgmentOutput
                 )
                 return ActionJudgment(
                     feasibility=unscaled_output.feasibility / 10,

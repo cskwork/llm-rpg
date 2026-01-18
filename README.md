@@ -34,12 +34,15 @@ LLM-RPG is intended to be a role-playing game that leverages large language mode
    poetry install
    ```
 
-3. Set up your environment variables. You need to set the `GROQ_API_KEY` to use a GroqLLM model. You can do this by creating a `.env` file in the `config` directory:
+3. Set up your environment variables. You need to set either `GROQ_API_KEY` or `ZAI_API_KEY` depending on which LLM backend you use. You can do this by creating a `.env` file in the `config` directory:
 
-   ```plaintext
-   GROQ_API_KEY=your_api_key_here
-   ```
+    ```plaintext
+    GROQ_API_KEY=your_api_key_here
+    # or
+    ZAI_API_KEY=your_api_key_here
+    ```
 You can get a Groq API key from [here](https://groq.com/). This gives you free tokens each day.
+You can get a Zai API key from [here](https://z.ai/model-api). Zai provides free models like glm-4.5-flash.
 
 4. Create `/models/sprite` dir then download and place the following models:
 - models/sprite/earthbound_lora.safetensors: [link](https://civitai.com/models/167491)
@@ -86,6 +89,47 @@ enemy_action:
 ```bash
 poetry run python -m llm_rpg
 ```
+
+## Using Zai API
+
+Using Zai (智谱AI) API:
+
+1. Get API key from https://z.ai/model-api
+
+2. Set `ZAI_API_KEY` environment variable in `config/.env`:
+
+    ```plaintext
+    ZAI_API_KEY=your_api_key_here
+    ```
+
+3. In game_config.yaml, set models under `action_judge`, `narrator`, and `enemy_action` to Zai model:
+
+    ```yaml
+    action_judge:
+      backend: "llm"
+      llm:
+        model: "glm-4.5-flash"
+        type: "zai"
+    narrator:
+      llm:
+        model: "glm-4.5-flash"
+        type: "zai"
+    enemy_action:
+      llm:
+        model: "glm-4.5-flash"
+        type: "zai"
+    ```
+
+4. Run the game
+
+    ```bash
+    poetry run python -m llm_rpg
+    ```
+
+Available Zai models:
+- `glm-4.5-flash` (FREE) - Recommended for testing
+- `glm-4.7` - Flagship model (paid)
+- `glm-4.5-air` - Cost-optimized (paid)
 
 ## Maintaining the codebase
 

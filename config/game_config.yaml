@@ -8,55 +8,51 @@ battle_background:
 action_judge:
   backend: "llm"
   llm:
-    model: "llama-3.3-70b-versatile" 
-    type: "groq"
+    model: "glm-4.7"
+    type: "zai"
 narrator:
   llm:
-    model: "llama-3.3-70b-versatile"
-    type: "groq"
+    model: "glm-4.7"
+    type: "zai"
 enemy_action:
   llm:
-    model: "llama-3.3-70b-versatile"
-    type: "groq"
+    model: "glm-4.7"
+    type: "zai"
 enemy_generation:
   llm:
-    model: "llama-3.3-70b-versatile"
-    type: "groq"
+    model: "glm-4.5-flash"
+    type: "zai"
   character_words_path: "src/llm_rpg/assets/word_lists/characters.txt"
   adjective_words_path: "src/llm_rpg/assets/word_lists/adjectives.txt"
   place_words_path: "src/llm_rpg/assets/word_lists/places.txt"
 sprite_generator:
+  type: "ascii"
+  prompt_llm:
+    model: "glm-4.5-flash"
+    type: "zai"
+
   #type: "dummy"
   #latency_seconds: 0.0
-  type: "sd"
-  base_model: "models/sprite/westernBeautiful_v10.safetensors"
-  lora_path: "models/sprite/earthbound_lora.safetensors"
-  lcm_lora_path: "models/sprite/LCM_LoRA_Weights_SD15.safetensors"
-  trigger_prompt: "Earthbound_enemy, neutral grey background, pixelart, drop shadow"
-  prompt_llm:
-    model: "llama-3.3-70b-versatile"
-    type: "groq"
-  prompt_template: |
-    Generate Stable Diffusion visual tags describing ONLY the physical appearance of this character.
 
-    Enemy name: {enemy_name}
-    Enemy description: {enemy_description}
-
-    Rules:
-    - Output only a comma-separated list
-    - Use at most 5 tags
-    - Tags must describe visible, physical traits only
-    - Do NOT include personality, emotions, behavior, or abstract qualities
-    - Prefer clothing, armor, body type, age, facial features, and gear
-    - Each tag should be usable directly as a Stable Diffusion prompt
-    - Describe ONLY the physical appearance of this character.
-  guidance_scale: 7
-  num_inference_steps: 40 
-  inference_height: 512
-  inference_width: 512
-  vae_path: null
-  use_lcm: false
-  negative_prompt: "ng_deepnegative_v1_75t,"
+  #type: "gemini"
+  #prompt_llm:
+  #  model: "glm-4.7"
+  #  type: "zai"
+  #prompt_template: |
+  #  Create a detailed image generation prompt for a pixel art RPG enemy sprite.
+  #
+  #  Enemy name: {enemy_name}
+  #  Enemy description: {enemy_description}
+  #
+  #  Requirements:
+  #  - Style: SNES-era EarthBound/Mother style, pixel art
+  #  - Background: Neutral grey or white
+  #  - The prompt should be in English
+  #  - Focus on visual elements only: appearance, colors, pose, style
+  #  - Keep it concise (under 100 words)
+  #cache_dir: "cache/sprites"
+  #state_dir: ".playwright_state"
+  #headless: false
 hero:
   base_hero_stats:
     attack: 5

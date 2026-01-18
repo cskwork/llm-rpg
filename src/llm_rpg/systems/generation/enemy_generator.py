@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import random
+import traceback
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -16,6 +17,9 @@ from llm_rpg.sprite_generator.sprite_generator import (
 from llm_rpg.systems.battle.enemy import Enemy, EnemyArchetypes
 from llm_rpg.systems.battle.enemy_action_generators import EnemyActionGenerator
 from llm_rpg.objects.character import Stats
+from llm_rpg.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -65,8 +69,11 @@ class EnemyGenerator:
         self.debug = debug
 
     def generate_enemy(self) -> tuple[Enemy, pygame.Surface]:
+        logger.info("Starting enemy generation...")
         enemy_description = self._generate_enemy_description()
+        logger.info(f"Got description - name={enemy_description.name}")
         archetype = random.choice(list(EnemyArchetypes))
+        logger.debug(f"Creating Enemy with archetype={archetype}")
         enemy = Enemy(
             name=enemy_description.name,
             description=enemy_description.description,
@@ -75,7 +82,19 @@ class EnemyGenerator:
             archetype=archetype,
             enemy_action_generator=self.enemy_action_generator,
         )
-        sprite = self.sprite_generator.generate_sprite(enemy)
+        logger.debug("Enemy created, generating sprite...")
+        
+        try:
+            sprite = self.sprite_generator.generate_sprite(enemy)
+            logger.info("Sprite generated successfully!")
+        except Exception as e:
+            logger.error(f"Sprite generation failed for {enemy_description.name}: {e}", exc_info=True)
+            logger.warning("Using default placeholder sprite due to generation error")
+            # Create fallback sprite
+            import pygame
+            sprite = pygame.Surface((64, 64), pygame.SRCALPHA)
+            sprite.fill((128, 128, 128))
+        
         return enemy, sprite
 
     def _pick_word(self, words: list[str], label: str) -> str:
@@ -102,18 +121,17 @@ class EnemyGenerator:
         while attempts < 3:
             prompt = self._get_prompt()
             if self.debug:
-                print("////////////DEBUG EnemyGeneration prompt////////////")
-                print(prompt)
-                print("////////////DEBUG EnemyGeneration prompt////////////")
+                logger.debug(f"EnemyGeneration prompt: {prompt[:500]}...")
             try:
                 output = self.llm.generate_structured_completion(
-                    prompt=prompt, output_model=LLMEnemyDescriptionOutput
+                    prompt=prompt, output_schema=LLMEnemyDescriptionOutput
                 )
+                logger.debug(f"Parsed output - name='{output.name}', description='{output.description[:50]}...'")
                 return EnemyDescription(
                     name=output.name.strip(),
                     description=output.description.strip(),
                 )
             except Exception as exc:
-                print(exc)
+                logger.error(f"Attempt {attempts + 1} failed: {type(exc).__name__}: {exc}", exc_info=True)
                 attempts += 1
         raise ValueError("Failed to generate enemy description")
